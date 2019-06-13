@@ -1,0 +1,16 @@
+{% extends 'boards/base.html' %}
+
+{% block content %}
+<h1>DETAIL</h1>
+<p>{{ board.title }}</p>
+<p>{{ board.content }}</p>
+<hr>
+<p>{{ board.created_at }}</p>
+<p>{{ board.updated_at }}</p>
+<a href="{% url 'boards:index' %}">홈으로</a>
+<a href="{% url 'boards:update' board.pk %}">수정</a>
+<form action="{% url 'boards:delete' board.pk %}" method="POST">
+  {% csrf_token %}
+  <input type="submit" value="삭제">
+</form>
+{% endblock %}

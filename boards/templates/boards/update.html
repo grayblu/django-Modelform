@@ -1,0 +1,14 @@
+{% extends 'boards/base.html' %}
+
+
+{% block content %}
+<h1>UPDATE</h1>
+<form action="" method="POST">
+  {% csrf_token %}
+  <input type="text" name="title" value="{{ board.title }}" >
+  <input type="text" name="content" value="{{ board.content }}">
+  <input type="submit" value="승인!">
+</form>
+<a href="{% url 'boards:detail' board.pk %}"><input type="button" value="취소"></a>
+
+{% endblock%}
