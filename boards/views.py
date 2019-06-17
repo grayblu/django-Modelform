@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from IPython import embed
+from django.contrib.auth.decorators import login_required
 from .models import Board
 from .forms import BoardForm
 
@@ -9,8 +10,9 @@ def index(request):
     content = { 'boards':boards, }
     return render(request, 'boards/index.html', content)
 
+
+@login_required
 def create(request):
-    
     if request.method == 'POST':
         # Binding: form 인스턴스를 생성하고 요청(request.POST)로 데이터를 채운다.
         form = BoardForm(request.POST)
@@ -24,7 +26,10 @@ def create(request):
             # board = Board.objects.create(title=title, content=content)
 
             # ModelForm을 적용 이후
-            board = form.save()
+            # board 를 바로 db 에 저장하지 않고 user 정보를 받은 후에 저장
+            board = form.save(commit=False)
+            board.user = request.user
+            board.save()
             return redirect('boards:detail', board.pk)
     # GET: 기본 form 인스턴스를 생성
     else:
@@ -40,24 +45,26 @@ def detail(request, board_pk):
     content = { 'board':board, }
     return render(request, 'boards/detail.html', content)
 
-
+@login_required
 def update(request, board_pk):
     board = get_object_or_404(Board, pk=board_pk)
-    if request.method == 'POST':
-        form = BoardForm(request.POST, instance=board)
-        if form.is_valid():
-            board = form.save()
-            # board.title = form.cleaned_data.get('title')
-            # board.content = form.cleaned_data.get('content')
-            # board.save()
+    if board.user == request.user:
+        if request.method == 'POST':
+            form = BoardForm(request.POST, instance=board)
+            if form.is_valid():
+                board = form.save()
+                # board.title = form.cleaned_data.get('title')
+                # board.content = form.cleaned_data.get('content')
+                # board.save()
 
-            return redirect('boards:detail', board.pk)
+                return redirect('boards:detail', board.pk)
+
+        else:
+            # form = BoardForm(initial=board.__dict__)
+            form = BoardForm(instance=board)
         
     else:
-        # form = BoardForm(initial=board.__dict__)
-        form = BoardForm(instance=board)
-        
-
+        return redirect('boards:index')
     context={ 'form':form,
               'board':board,  
              }
@@ -66,8 +73,11 @@ def update(request, board_pk):
 
 def delete(request, board_pk):
     board = get_object_or_404(Board, pk=board_pk)
-    if request.method == 'POST':
-        board.delete()
-        return redirect('boards:index')
+    if board.user == request.user:
+        if request.method == 'POST':
+            board.delete()
+            return redirect('boards:index')
+        else:
+            return redirect('boards:detail', board.pk)
     else:
-        return redirect('boards:detail', board.pk)
+        return redirect('boards:index')
